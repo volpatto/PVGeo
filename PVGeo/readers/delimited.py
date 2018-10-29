@@ -9,12 +9,6 @@ __displayname__ = 'Delimited File I/O'
 import numpy as np
 import pandas as pd
 
-import sys
-if sys.version_info < (3,):
-    from StringIO import StringIO
-else:
-    from io import StringIO
-
 # Import Helpers:
 from ..base import ReaderBase
 from .. import _helpers
@@ -56,79 +50,99 @@ class DelimitedTextReader(ReaderBase):
     def GetSplitOnWhiteSpace(self):
         return self.__useTab
 
+    def _readline(self, handle):
+        """This reads the next line from a file handle ignoring comments."""
+        ln = handle.readline()
+        while (ln[0] == self.__comments):
+            ln = handle.readline()
+        ln = ln.split(self.__comments)[0].strip()
+        return ln
+
+    def _previewline(self, handle):
+        last_pos = handle.tell()
+        ln = self._readline(handle)
+        handle.seek(last_pos)
+        return ln
+
     #### Methods for performing the read ####
 
-    def _GetFileContents(self, idx=None):
-        """This grabs the lines of the input data file as a string array. This
-        allows us to load the file contents, parse the header then use numpy or
-        pandas to parse the data."""
+    def _GetFileHandles(self, idx=None):
+        """This opens the input data file(s). This allows us to load the file
+        contents, parse the header then use numpy or pandas to parse the data.
+        These handles are closed by `_FileContentsToDataFrame`.
+        """
         if idx is not None:
             fileNames = [self.GetFileNames(idx=idx)]
         else:
             fileNames = self.GetFileNames()
-        contents = []
+        handles = []
         for f in fileNames:
             try:
-                contents.append(np.genfromtxt(f, dtype=str, delimiter='\n', comments=self.__comments)[self.__skipRows::])
+                #contents.append(np.genfromtxt(f, dtype=str, delimiter='\n', comments=self.__comments)[self.__skipRows::])
+                handle = open(f, 'r')
+                for n in range(self.__skipRows):
+                    handle.readline()
+                handles.append(handle)
             except (IOError, OSError) as fe:
                 raise _helpers.PVGeoError(str(fe))
-        if idx is not None: return contents[0]
-        return contents
+        if idx is not None: return handles[0]
+        return handles
 
-    def _ExtractHeader(self, content):
-        """Override this. Removes header from single file's content.
+    def _ExtractHeader(self, handle):
+        """Removes header from the given file's handle and moves the file iter
+        forward ignoring comments.
         """
-        if len(np.shape(content)) > 2:
-            raise _helpers.PVGeoError("`_ExtractHeader()` can only handle a sigle file's content")
-        idx = 0
+        # if len(np.shape(content)) > 2:
+        #     raise _helpers.PVGeoError("`_ExtractHeader()` can only handle a sigle file's content")
         if self.__hasTitles:
-            titles = content[idx].split(self._GetDeli())
-            idx += 1
+            titles = self._readline(handle).split(self._GetDeli())
         else:
-            cols = len(content[idx].split(self._GetDeli()))
+            cols = len(self._previewline(handle).split(self._GetDeli()))
             titles = []
             for i in range(cols):
                 titles.append('Field %d' % i)
-        return titles, content[idx::]
+        return titles
 
-    def _ExtractHeaders(self, contents):
+    def _ExtractHeaders(self, handles):
         """Should NOT be overriden. This is a convienance methods to iteratively
         get all file contents. Your should override ``_ExtractHeader``.
         """
         ts = []
-        for i in range(len(contents)):
-            titles, newcontent = self._ExtractHeader(contents[i])
-            contents[i] = newcontent
+        for i in range(len(handles)):
+            titles = self._ExtractHeader(handles[i])
             ts.append(titles)
         # Check that the titles are the same across files:
         ts = np.unique(np.asarray(ts), axis=0)
         if len(ts) > 1:
             raise _helpers.PVGeoError('Data array titles varied across file timesteps. This data is invalid as a timeseries.')
-        return ts[0], contents
+        return ts[0]
 
 
-    def _FileContentsToDataFrame(self, contents):
-        """Should NOT need to be overriden. After ``_ExtractHeaders`` handles
-        removing the file header from the file contents, this method will parse
-        the remainder of the contents into a pandas DataFrame with column names
-        generated from the titles resulting from in ``_ExtractHeaders``.
+    def _FileContentsToDataFrame(self, handles):
+        """Should NOT need to be overriden. After ``_ExtractHeaders`` removes
+        the file header from the file hendle, this method will parse
+        the remainder of the file from each handle in ``handles`` into a pandas
+        DataFrame with column names generated from the titles resulting from in
+        ``_ExtractHeaders``. This makes sure to close each of the file handles;
+        if you override this, then you MUST besure to close each file handle!
         """
         data = []
-        for content in contents:
+        for handle in handles:
             if self.GetSplitOnWhiteSpace():
-                df = pd.read_table(StringIO("\n".join(content)), names=self.GetTitles(), delim_whitespace=self.GetSplitOnWhiteSpace())
+                df = pd.read_table(handle, names=self.GetTitles(), delim_whitespace=self.GetSplitOnWhiteSpace(), comment=self.GetComments())
             else:
-                df = pd.read_table(StringIO("\n".join(content)), names=self.GetTitles(), sep=self._GetDeli())
+                df = pd.read_table(handle, names=self.GetTitles(), sep=self._GetDeli(), comment=self.GetComments())
             data.append(df)
+            handle.close()
         return data
 
     def _ReadUpFront(self):
-        """Should not need to be overridden.
+        """Should not need to be overridden. This runs the file read routine.
         """
         # Perform Read
-        contents = self._GetFileContents()
-        self._titles, contents = self._ExtractHeaders(contents)
-        self._data = self._FileContentsToDataFrame(contents)
+        handles = self._GetFileHandles()
+        self._titles = self._ExtractHeaders(handles)
+        self._data = self._FileContentsToDataFrame(handles)
         self.NeedToRead(flag=False)
         return 1
 
@@ -196,6 +210,10 @@ class DelimitedTextReader(ReaderBase):
         if identifier != self.__comments:
             self.__comments = identifier
             self.Modified()
+
+    def GetComments(self):
+        """Get the string identifier for comments"""
+        return self.__comments
 
     def SetHasTitles(self, flag):
         """A boolean for if the delimited file has header titles for the data
@@ -269,6 +287,6 @@ class XYZTextReader(DelimitedTextReader):
         self.SetComments(kwargs.get('comments', '#'))
 
     # Simply override the extract titles functionality
-    def _ExtractHeader(self, content):
-        titles = content[0][2::].split(', ') # first two characers of header is '! '
-        return titles, content[1::]
+    def _ExtractHeader(self, handle):
+        titles = handle.readline().split('! ')[1].strip().split(', ') # first two characers of header is '! '
+        return titles

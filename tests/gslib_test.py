@@ -33,7 +33,7 @@ class TestGSLibReader(TestBase):
         self.data = np.random.random((self.n, len(self.titles)))
         header = [self.header, '%d' % len(self.titles)]
         for ln in self.titles:
-            header.append(ln + '\n')
+            header.append(ln)
         header = '\n'.join(header)
         np.savetxt(fname, self.data, delimiter=' ', header=header, comments='')
         # Set up the reader
@@ -129,7 +129,7 @@ class TestSGeMSGridReader(TestBase):
         self.data = np.random.random((self.n, len(self.titles)))
         header = ['%d %d %d' % self.shape, '%d' % len(self.titles)]
         for ln in self.titles:
-            header.append(ln + '\n')
+            header.append(ln)
         header = '\n'.join(header)
         np.savetxt(fname, self.data, delimiter=' ', header=header, comments='')
         # Set up the reader

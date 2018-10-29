@@ -44,16 +44,16 @@ class SGeMSGridReader(GSLibReader):
         """
         # Read first file... extent cannot vary with time
         # TODO: make more efficient to only reader header of file
-        fileLines = self._GetFileContents(idx=0)
-        h = fileLines[0+self.GetSkipRows()].split(self._GetDeli())
+        handle = self._GetFileHandles(idx=0)
+        h = self._previewline(handle)
         try:
             n1,n2,n3 = int(h[0]), int(h[1]), int(h[2])
         except ValueError:
             raise _helpers.PVGeoError('File not in proper SGeMS Grid fromat.')
         return (0,n1, 0,n2, 0,n3)
 
-    def _ExtractHeader(self, content):
-        titles, content = GSLibReader._ExtractHeader(self, content)
+    def _ExtractHeader(self, handle):
+        titles = GSLibReader._ExtractHeader(self, handle)
         h = self.GetFileHeader().split(self._GetDeli())
         try:
             if self.__extent is None:
@@ -62,7 +62,7 @@ class SGeMSGridReader(GSLibReader):
                 raise _helpers.PVGeoError('Grid dimensions change in file time series.')
         except ValueError:
             raise _helpers.PVGeoError('File not in proper SGeMS Grid fromat.')
-        return titles, content
+        return titles
 
     def RequestData(self, request, inInfo, outInfo):
         """Used by pipeline to get output data object for given time step.

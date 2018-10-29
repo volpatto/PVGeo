@@ -36,14 +36,14 @@ class GSLibReader(DelimitedTextReader):
         # These are attributes the derived from file contents:
         self.__header = None
 
-    def _ExtractHeader(self, content):
-        self.__header = content[0]
+    def _ExtractHeader(self, handle):
+        self.__header = self._readline(handle)
         try:
-            num = int(content[1]) # number of data columns
+            num = int(self._readline(handle)) # number of data columns
         except ValueError:
             raise _helpers.PVGeoError('This file is not in proper GSLIB format.')
-        titles = [ln.rstrip('\r\n') for ln in content[2:2+num]]
-        return titles, content[2 + num::]
+        titles = [self._readline(handle) for i in range(num)]
+        return titles
 
 
     #### Seters and Geters ####

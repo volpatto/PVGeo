@@ -19,15 +19,9 @@ import pandas as pd
 import warnings
 import espatools
 
-import sys
 import struct
 import properties
 import re
-
-if sys.version_info < (3,):
-    from StringIO import StringIO
-else:
-    from io import StringIO
 
 
 # Import Helpers:
@@ -446,26 +440,31 @@ class EsriGridReader(DelimitedTextReader):
         self.__dataName = 'Data'
         self.NODATA_VALUE = -9999
 
-    def _ExtractHeader(self, content):
+    def _ExtractHeader(self, handle):
         try:
-            self.__nx = int(content[0].split()[1])
-            self.__ny = int(content[1].split()[1])
-            self.__xo = float(content[2].split()[1])
-            self.__yo = float(content[3].split()[1])
-            self.__cellsize = float(content[4].split()[1])
-            self.NODATA_VALUE = float(content[5].split()[1])
+            self.__nx = int(self._readline(handle).split()[1])
+            self.__ny = int(self._readline(handle).split()[1])
+            self.__xo = float(self._readline(handle).split()[1])
+            self.__yo = float(self._readline(handle).split()[1])
+            self.__cellsize = float(self._readline(handle).split()[1])
+            self.NODATA_VALUE = float(self._readline(handle).split()[1])
         except ValueError:
             raise _helpers.PVGeoError('This file is not in proper Esri ASCII Grid format.')
-        return [self.__dataName], content[6::]
+        return [self.__dataName]
 
-    def _FileContentsToDataFrame(self, contents):
+    def _FileContentsToDataFrame(self, handles):
         """Creates a dataframe with a sinlge array for the file data.
         """
         data = []
-        for content in contents:
-            arr = np.fromiter((float(s) for line in content for s in line.split()), dtype=float)
-            df = pd.DataFrame(data=arr, columns=[self.GetDataName()])
+        for handle in handles:
+            #arr = np.fromiter((float(s) for line in content for s in line.split()), dtype=float)
+            #df = pd.DataFrame(data=arr, columns=[self.GetDataName()])
+            if self.GetSplitOnWhiteSpace():
+                df = pd.read_table(handle, names=self.GetTitles(), delim_whitespace=self.GetSplitOnWhiteSpace(), comment=self.GetComments())
+            else:
+                df = pd.read_table(handle, names=self.GetTitles(), sep=self._GetDeli(), comment=self.GetComments())
             data.append(df)
+            handle.close()
         return data
 
 

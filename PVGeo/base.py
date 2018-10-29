@@ -119,7 +119,7 @@ class ReaderBaseBase(AlgorithmBase):
     #### Methods for performing the read ####
     # These are meant to be overwritten by child classes
 
-    def _GetFileContents(self, idx=None):
+    def _GetFileHandles(self, idx=None):
         raise NotImplementedError()
 
     def _ReadUpFront(self):

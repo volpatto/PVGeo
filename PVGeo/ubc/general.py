@@ -39,13 +39,13 @@ class TopoReader(DelimitedPointsReaderBase):
         self.__npts = None
 
     # Simply override the extract titles functionality
-    def _ExtractHeader(self, content):
+    def _ExtractHeader(self, handle):
         # No titles
         # Get number of points
-        self.__npts = int(content[0].strip())
-        if len(content[1].split(self._GetDeli())) != 3:
+        self.__npts = int(self._readline(handle))
+        if len(self._readline(handle).split(self._GetDeli())) != 3:
             raise _helpers.PVGeoError('Data improperly formatted')
-        return ['X', 'Y', 'Z'], content[1::]
+        return ['X', 'Y', 'Z']
 
 
 
@@ -68,14 +68,14 @@ class GravObsReader(DelimitedPointsReaderBase):
         self.__npts = None
 
     # Simply override the extract titles functionality
-    def _ExtractHeader(self, content):
+    def _ExtractHeader(self, handle):
         # No titles
         # Get number of points
-        self.__npts = int(content[0].strip())
+        self.__npts = int(self._readline(handle))
         # Now decide if it is single or multi component
-        if len(content[1].split(self._GetDeli())) != 5:
+        if len(self._readline(handle).split(self._GetDeli())) != 5:
             raise _helpers.PVGeoError('Data improperly formatted')
-        return ['X', 'Y', 'Z', 'Grav', 'Err'], content[1::]
+        return ['X', 'Y', 'Z', 'Grav', 'Err']
 
 
 ################################################################################
@@ -97,22 +97,22 @@ class GravGradReader(DelimitedPointsReaderBase):
         self.__npts = None
 
     # Simply override the extract titles functionality
-    def _ExtractHeader(self, content):
+    def _ExtractHeader(self, handle):
         # Get components
-        comps = content[0].split('=')[1].split(',')
+        comps = self._readline(handle).split('=')[1].split(',')
         # Get number of points
-        self.__npts = int(content[1].strip())
+        self.__npts = int(self._readline(handle))
         titles = ['X', 'Y', 'Z']
         for c in comps:
             titles.append(c)
         # Now decipher if it has stddevs
-        num = len(content[2].split(self._GetDeli()))
+        num = len(self._readline(handle).split(self._GetDeli()))
         if num != len(titles):
             if num != (len(titles) + len(comps)):
                 raise _helpers.PVGeoError('Data improperly formatted')
             for c in comps:
                 titles.append('Stn_%s' % c )
-        return titles, content[2::]
+        return titles
 
 
 ################################################################################
@@ -141,24 +141,24 @@ class MagObsReader(DelimitedPointsReaderBase):
 
 
     # Simply override the extract titles functionality
-    def _ExtractHeader(self, content):
+    def _ExtractHeader(self, handle):
         # No titles
-        self.__incl, self.__decl, self.__geomag = (float(val) for val in content[0].split(self._GetDeli()))
-        self.__ainc, self.__adec, self.__dir = (float(val) for val in content[1].split(self._GetDeli()))
+        self.__incl, self.__decl, self.__geomag = (float(val) for val in self._readline(handle).split(self._GetDeli()))
+        self.__ainc, self.__adec, self.__dir = (float(val) for val in self._readline(handle).split(self._GetDeli()))
         # Get number of points
-        self.__npts = int(content[2].strip())
+        self.__npts = int(self._readline(handle).strip())
         # Now decide if it is single or multi component
-        row = content[3].split(self._GetDeli())
+        row = self._readline(handle).split(self._GetDeli())
         num = len(row)
         if num == 3: # just locations
             self.SetCopyZ(True)
-            return ['X', 'Y', 'Z'], content[3::]
+            return ['X', 'Y', 'Z']
         elif num == 4: # single component
-            return ['X', 'Y', 'Z', 'Mag'], content[3::]
+            return ['X', 'Y', 'Z', 'Mag']
         elif num == 5: # single component
-            return ['X', 'Y', 'Z', 'Mag', 'Err'], content[3::]
+            return ['X', 'Y', 'Z', 'Mag', 'Err'],
         elif num == 7: # multi component
-            return ['X', 'Y', 'Z', 'ainc_1', 'ainc_2', 'Mag', 'Err'], content[3::]
+            return ['X', 'Y', 'Z', 'ainc_1', 'ainc_2', 'Mag', 'Err']
         else:
             raise _helpers.PVGeoError('Data improperly formatted.')
 
