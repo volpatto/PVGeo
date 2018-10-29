@@ -6,30 +6,24 @@ python:
     - 3.6 # Build and deploy here
 sudo: false
 
-env:
-    matrix:
-        - TEST_SUITE=filters
-        - TEST_SUITE=grids
-        - TEST_SUITE=gslib
-        - TEST_SUITE=helpers
-        - TEST_SUITE=gslib
-        - TEST_SUITE=model_build
-        - TEST_SUITE=readers
-        - TEST_SUITE=ubc
-
 install:
     - pip install -r requirements.txt
     - pip install vtk>=8.1.0
 
+# exit with error code if problem occurs
 script:
     - python setup.py install
-    - python tests/__main__.py close ${TEST_SUITE} # exit with error code if problem occurs
+    - python tests/__main__.py close filters
+    - python tests/__main__.py close grids
+    - python tests/__main__.py close gslib
+    - python tests/__main__.py close helpers
+    - python tests/__main__.py close model_build
+    - python tests/__main__.py close readers
+    - python tests/__main__.py close ubc
 
 after_success:
-    #- if [ ${TEST_SUITE} == "all" ]; then
-    - coverage run tests/__main__.py ${TEST_SUITE}
-    - codecov --token=8da9d332-1618-450d-8654-09a8ecf3c2dc
-    #fi
+    coverage run tests/__main__.py close
+    codecov --token=8da9d332-1618-450d-8654-09a8ecf3c2dc
 
 notifications:
     slack:

@@ -22,6 +22,7 @@ def lookUpSuite(name):
                 'grids': ['grids_test.py'],
                 'gslib': ['gslib_test.py'],
                 'helpers': ['helpers_test.py'],
+                '_helpers': ['helpers_test.py'],
                 'model_build': ['model_build_test.py'],
                 'readers': ['readers_test.py'],
                 'ubc': ['ubc_test.py'],
