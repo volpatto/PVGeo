@@ -8,7 +8,6 @@ sudo: false
 
 env:
     matrix:
-        - TEST_SUITE=all
         - TEST_SUITE=filters
         - TEST_SUITE=grids
         - TEST_SUITE=gslib
@@ -24,13 +23,13 @@ install:
 
 script:
     - python setup.py install
-    - python -m tests close ${TEST_SUITE} # exit with error code if problem occurs
+    - python tests/__main__.py close ${TEST_SUITE} # exit with error code if problem occurs
 
 after_success:
-    - if [ ${TEST_SUITE} == "all" ]; then
-        coverage run tests/__main__.py ${TEST_SUITE}
-        codecov --token=8da9d332-1618-450d-8654-09a8ecf3c2dc
-      fi
+    #- if [ ${TEST_SUITE} == "all" ]; then
+    - coverage run tests/__main__.py ${TEST_SUITE}
+    - codecov --token=8da9d332-1618-450d-8654-09a8ecf3c2dc
+    #fi
 
 notifications:
     slack:
