@@ -45,7 +45,8 @@ class SGeMSGridReader(GSLibReader):
         # Read first file... extent cannot vary with time
         # TODO: make more efficient to only reader header of file
         handle = self._GetFileHandles(idx=0)
-        h = self._previewline(handle)
+        h = self._previewline(handle).split(self._GetDeli())
+        print(h)
         try:
             n1,n2,n3 = int(h[0]), int(h[1]), int(h[2])
         except ValueError:
@@ -98,6 +99,7 @@ class SGeMSGridReader(GSLibReader):
         GSLibReader.RequestInformation(self, request, inInfo, outInfo)
         # Now set whole output extent
         ext = self._ReadExtent()
+        print(ext)
         info = outInfo.GetInformationObject(0)
         # Set WHOLE_EXTENT: This is absolutely necessary
         info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(), ext, 6)
