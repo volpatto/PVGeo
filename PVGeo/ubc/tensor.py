@@ -189,7 +189,7 @@ class TensorMeshReader(ubcMeshReaderBase):
 
         dim = np.genfromtxt(FileName, dtype=int, delimiter=None, comments='!', max_rows=1)
         names = ['col%d' % i for i in range(dim[0])]
-        df = pd.read_csv(FileName, names=names, delim_whitespace=True, skiprows=1, comment='!')
+        df = pd.read_table(FileName, names=names, delim_whitespace=True, skiprows=1, comment='!')
         data = df.values
         if np.shape(data)[0] != dim[1] and np.shape(data)[1] != dim[0]:
             raise _helpers.PVGeoError('Mode file `%s` improperly formatted.' % FileName)
@@ -460,7 +460,7 @@ class TopoMeshAppender(AlgorithmBase):
                                 comments='!')
         dim = content[0].split()
         self.__ne, self.__nn = int(dim[0]), int(dim[1])
-        self.__indices = pd.read_csv(StringIO("\n".join(content[1::])),
+        self.__indices = pd.read_table(StringIO("\n".join(content[1::])),
                             names=['i', 'j', 'k'], delim_whitespace=True)
         # NOTE: K indices are inverted
         self.NeedToRead(flag=False)

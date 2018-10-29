@@ -680,7 +680,7 @@ class TestPointsToTube(TestBase):
 #     def test_conversion(self):
 #         fname = '/Users/bane/Documents/OpenGeoVis/Data/data_open/NGDC/zone11.csv'
 #         import pandas as pd
-#         data = pd.read_csv(fname)
+#         data = pd.read_table(fname)
 #         points = interface.pointsToPolyData(data[['lon', 'lat', 'idx', 'val']])
 #         good = LonLatToUTM(zone=11).Apply(points)
 #         return

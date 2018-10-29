@@ -215,7 +215,7 @@ class GeologyMapper(FilterPreserveTypeBase):
     @staticmethod
     def _ReadDefinitions(filename, delimiter):
         """Reades the geology definition file as a pandas DataFrame"""
-        return pd.read_csv(filename, sep=delimiter)
+        return pd.read_table(filename, sep=delimiter)
 
     @staticmethod
     def _MapValues(geol, arr):

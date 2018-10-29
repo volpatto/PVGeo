@@ -116,9 +116,9 @@ class DelimitedTextReader(ReaderBase):
         data = []
         for content in contents:
             if self.GetSplitOnWhiteSpace():
-                df = pd.read_csv(StringIO("\n".join(content)), names=self.GetTitles(), delim_whitespace=self.GetSplitOnWhiteSpace())
+                df = pd.read_table(StringIO("\n".join(content)), names=self.GetTitles(), delim_whitespace=self.GetSplitOnWhiteSpace())
             else:
-                df = pd.read_csv(StringIO("\n".join(content)), names=self.GetTitles(), sep=self._GetDeli())
+                df = pd.read_table(StringIO("\n".join(content)), names=self.GetTitles(), sep=self._GetDeli())
             data.append(df)
         return data
 
