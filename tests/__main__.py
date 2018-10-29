@@ -68,7 +68,7 @@ if __name__ == '__main__':
         if arg.lower() == 'close':
             close = True
         else:
-            raise RuntimeError('Unknown argument: %s' % arg)
-        if len(sys.argv) == 3:
+            suite = sys.argv[1]
+        if len(sys.argv) == 3 and suite == None:
             suite = sys.argv[2]
     test(close=close, suite=suite)
